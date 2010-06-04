@@ -1,0 +1,99 @@
+<?php
+/**
+ * Implements hook_help().
+ */
+function quickloc_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#quickloc':
+      $output = '';
+      $output .= '<h3>' . t('About Quicker Locale') . '</h3>';
+      $output .= '<p>' . t('This module has only one purpose: To extend the Locale module to make content translation easier by allowing translators to insert "tokens" into the text strings by simply clicking the token.') . '</p>';
+      $output .= '<h3>' . t('Installation') . '</h3>';
+      $output .= '<p>' . t('Install this module in <code>sites/all/modules</code> (recommended) or in <code>modules</code>. Then download the jQuery Caret plugin from <a href=""></a> and install to <code>sites/all/libraries/jquery.caret.js</code>.') . '</p>';
+      $output .= '<h3>' . t('Usage') . '</h3>';
+      $output .= '<p>' . t('When this module has been installed you will be able to click on placeholders (such as @name or !url or %number) to quickly insert them into the text area you are writing. The placeholder will be inserted where your caret currently is. You will not lose focus and will be able to continue writing.') . '</p>';
+      return $output;
+    break;
+    case 'admin/config/regional/translate/edit/%':
+      $output = '';
+      $output .= '<p>' . t('<strong>Tip</strong>: You can click on HTML markup as well as placeholders that begin with <strong>!</strong>, <strong>@</strong> or <strong>%</strong> to insert into your translation.') . '</p>';
+      return $output;
+    break;
+  }
+}
+
+
+/**
+ * Implements hook_permission().
+ * Valid permissions for this module
+ * @return array An array of valid permissions for the quickloc module
+ */
+function quickloc_permission() {
+  return array( 'administer languages' =>
+                  array( 'title' => t('Use Quicker Locale'),
+                    'description' => t('Allows for easy placeholder insertion during content translation.'), ), );
+}
+
+
+/**
+ * Implements hook_form_alter().
+ * Only load the content of this module when actually viewing the translation form
+ * @return form array and added js+css files
+ */
+function quickloc_form_locale_translate_edit_form_alter(&$form, $form_state) {
+  // Wrap the original text in an identifiable container. This allows jQuery easy access to the string to be translated.
+  $form['original']['#markup'] = '<div id="quickloc_original_markup">' . htmlentities($form['original']['#markup']) . '</div>';
+
+  // Add js and css files. These are the files we will load. This might be a bit cumbersome but will make work with possible conflict with other modules easier.
+  // js is the module js
+  // css is the module css
+  // caret is the jquery plugin
+  $locale_files = array('js', 'css' );
+
+  // Check if caret plugin exists
+  if (count(file_scan_directory('sites/all/libraries', '/jquery.caret.js/i', array(), 0)) == 0) {
+    // If not, set the warning message
+    $quickloc_caret_missing_message = 'You need to install the jQuery Caret plugin for Quicker Locale to work as intended. Download it from the <a href="http://plugins.jquery.com/project/caret">jQuery plugin repository</a> and install it to <code>sites/all/libraries/jquery.caret.js</code>.';
+
+    drupal_set_message( $quickloc_caret_missing_message, 'warning' );
+  }
+
+  // If the file esists; add it to the files to load
+  else {
+    $locale_files[] = 'caret';
+  }
+
+  // Now run the function to add the files
+  quickloc_add_files($locale_files);
+}
+
+
+/**
+ * Implements hook_add_files().
+ * Function that contains the files that should be loaded into Drupal. Accepts an array with references to the files we should add
+ */
+function quickloc_add_files($locale_files) {
+  // Load path to this module.
+  $path = drupal_get_path('module', 'quickloc');
+
+  // Check which files to add to the page and add them
+  foreach ($locale_files as $file) {
+    switch ($file) {
+      case 'css':
+        // Short and sweet css file that highlights the placeholders that the js file selects
+        drupal_add_css($path . '/quickloc.css',
+          array( 'type' => 'file', 'media' => 'all', 'weight' => 0 ) );
+      break;
+      case 'caret':
+        // jQuery Caret plugin from http://plugins.jquery.com/project/caret. It should load before quickloc.js
+        drupal_add_js('sites/all/libraries/jquery.caret.js',
+          array( 'type' => 'file', 'scope' => 'header', 'weight' => 14 ) );
+      break;
+      case 'js':
+        // This is the main js file that modifies the form UI
+        drupal_add_js($path . '/quickloc.js',
+          array( 'type' => 'file', 'scope' => 'header', 'weight' => 15 ) );
+      break;
+    }
+  }
+}

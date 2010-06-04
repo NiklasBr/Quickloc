@@ -1,0 +1,8 @@
+; $Id$
+name = Quicker Locale
+description = Allows for easy placeholder insertion during content translation.
+package = Locale
+version = 1.1.1
+core = 7.x
+dependencies[] = locale
+files[] = quickloc.module

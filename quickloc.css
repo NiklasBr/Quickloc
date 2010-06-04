@@ -1,0 +1,10 @@
+.quicloc_insertable, .quicloc_insertable:active {
+  background: #e0e0d8 url(arrow.png) no-repeat scroll 2px center;
+  border: 0px solid #b5b5b5;
+  margin-left: 2px;
+  padding: 1px 1px 1px 14px;
+}
+.quicloc_insertable:hover { 
+  background-color:#e7dac2;
+  cursor: pointer;
+}
